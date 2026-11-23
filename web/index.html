@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>브레이튼 사이클 (Brayton Cycle) 열역학 대시보드</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              cyan: '#06b6d4',
+              blue: '#3b82f6',
+              amber: '#f59e0b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- KaTeX CDN (수식 렌더링) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased flex flex-col">
+
+  <!-- 내비게이션 바 -->
+  <header class="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+          <span class="text-white font-black text-lg">⚡</span>
+        </div>
+        <div>
+          <span class="font-bold text-base md:text-lg tracking-tight bg-gradient-to-r from-cyan-400 via-sky-300 to-white bg-clip-text text-transparent">
+            BRAYTON CYCLE
+          </span>
+          <span class="hidden sm:inline-block ml-2 px-2 py-0.5 text-[10px] font-semibold bg-cyan-950/60 text-cyan-400 border border-cyan-500/30 rounded-full">
+            Thermodynamics & Jet Propulsion
+          </span>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center gap-6 text-sm text-slate-300 font-medium">
+        <a href="#schematic" class="hover:text-cyan-400 transition-colors">시스템 구조도</a>
+        <a href="#steps" class="hover:text-cyan-400 transition-colors">3-Step Dance</a>
+        <a href="#simulator" class="hover:text-cyan-400 transition-colors">열역학 시뮬레이터</a>
+        <a href="#tradeoff" class="hover:text-cyan-400 transition-colors">트레이드오프</a>
+        <a href="#application" class="hover:text-cyan-400 transition-colors">산업 응용</a>
+        <a href="#gallery" class="hover:text-cyan-400 transition-colors">갤러리</a>
+      </nav>
+
+      <div class="flex items-center gap-2">
+        <a href="../Brayton_Cycle_Technical_Manual.pdf" target="_blank"
+           class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 flex items-center gap-1.5 transition-all">
+          <span>📄</span>
+          <span>원문 PDF</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 콘텐츠 -->
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+    <!-- 히어로 섹션 -->
+    <section class="relative rounded-2xl p-6 md:p-10 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 overflow-hidden shadow-2xl">
+      <div class="absolute -right-20 -top-20 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -left-20 -bottom-20 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="relative z-10 max-w-3xl space-y-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+          <span>🔥</span>
+          <span>YouTube Shorts [bSXq6ox_XLA] Charlie Solis 기반 공학 해설</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight">
+          가스터빈 & 터보제트의 핵심 원리:<br />
+          <span class="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-300 bg-clip-text text-transparent">
+            브레이튼 사이클 (Brayton Cycle)
+          </span>
+        </h1>
+        <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+          1872년 조지 브레이튼에 의해 정립된 공기 유동 정상계(Steady-Flow System)의 정수.
+          복잡한 열역학을 <strong>"Compress ➔ Heat ➔ Expand"</strong> 3단계 직관적 프로세스로 체계화하고 실시간 수치 시뮬레이션으로 탐색합니다.
+        </p>
+
+        <div class="flex flex-wrap gap-2 pt-2">
+          <span class="px-3 py-1 text-xs rounded-lg bg-slate-800/80 border border-slate-700/80 text-slate-300">
+            🌀 연속 정상 유동 사이클
+          </span>
+          <span class="px-3 py-1 text-xs rounded-lg bg-slate-800/80 border border-slate-700/80 text-amber-300">
+            ⚙️ 역일비율 (BWR) 40~60%
+          </span>
+          <span class="px-3 py-1 text-xs rounded-lg bg-slate-800/80 border border-slate-700/80 text-cyan-300">
+            📊 P-v / T-s 실시간 선도
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 1: 기본 시스템 계통도 및 역일비율 -->
+    <section id="schematic" class="space-y-6">
+      <div class="border-b border-slate-800 pb-3 flex items-center justify-between">
+        <div>
+          <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+            <span class="text-cyan-400">01.</span> 기본 브레이튼 사이클 시스템 구조도
+          </h2>
+          <p class="text-xs md:text-sm text-slate-400 mt-1">
+            압축기, 연소실, 터빈의 3대 필수 부품과 축(Shaft)을 통한 에너지 환원 루프
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- 계통도 이미지 카드 -->
+        <div class="lg:col-span-7 glass-panel rounded-2xl p-5 border border-slate-800 space-y-4">
+          <div class="relative group rounded-xl overflow-hidden bg-slate-900 border border-slate-700/80 cursor-pointer"
+               onclick="window.BraytonSchematic.openImageModal('images/brayton_diagram.png', '기본 브레이튼 사이클 시스템 구성도')">
+            <img src="images/brayton_diagram.png" alt="브레이튼 사이클 계통도" class="w-full h-auto object-contain max-h-72 p-2 mx-auto" />
+            <div class="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <span class="bg-cyan-500 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-full shadow-lg">🔍 원본 확대</span>
+            </div>
+          </div>
+          <div class="text-xs text-slate-400 leading-relaxed space-y-1">
+            <p><strong class="text-slate-200">(1) 외기 흡입</strong> ➔ <strong class="text-cyan-400">(2) 압축기(Compressor)</strong> 고압화 ➔ <strong class="text-red-400">(3) 연소실(Combustor)</strong>에서 열량($\dot{Q}_{in}$) 투입 ➔ <strong class="text-amber-400">(4) 터빈(Turbine)</strong> 단열 팽창 및 축출력($\dot{W}_{output}$) 생성</p>
+            <p class="text-slate-500">생성된 축 동력의 상당량이 압축기 축(Shaft)을 통해 $\dot{W}_{in}$으로 자동 환원됩니다.</p>
+          </div>
+        </div>
+
+        <!-- 핵심 메커니즘 카드 (Back-Work Ratio) -->
+        <div class="lg:col-span-5 flex flex-col justify-between space-y-4">
+          <div class="glass-panel rounded-2xl p-6 border border-amber-500/30 bg-gradient-to-br from-amber-950/20 to-slate-900 space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">💡</span>
+              <h3 class="text-lg font-bold text-amber-300">핵심 메커니즘: 역일비율 (Back-Work Ratio)</h3>
+            </div>
+            <p class="text-xs md:text-sm text-slate-300 leading-relaxed">
+              증기터빈(랭킨 사이클)에서는 비압축성 액체(물)를 펌프로 가압하므로 펌프 소비 일이 전체 일의 <strong>1~2%</strong>에 불과합니다.
+            </p>
+            <p class="text-xs md:text-sm text-slate-300 leading-relaxed">
+              반면 기체(공기)를 압축하는 브레이튼 사이클에서는 터빈이 생산한 일의 <strong class="text-amber-400 underline decoration-amber-500/50 underline-offset-4">약 40% ~ 60%</strong>가 전방 압축기를 구동하는 데 다시 소비됩니다.
+            </p>
+            <div class="bg-slate-900/90 rounded-xl p-3 border border-slate-700/80 text-xs font-mono space-y-1 text-slate-300">
+              <div class="flex justify-between">
+                <span>증기터빈 (Rankine):</span>
+                <span class="text-green-400 font-bold">BWR ≈ 1~2%</span>
+              </div>
+              <div class="flex justify-between">
+                <span>가스터빈 (Brayton):</span>
+                <span class="text-amber-400 font-bold">BWR ≈ 40~60%</span>
+              </div>
+            </div>
+            <p class="text-xs text-amber-200/80 italic">
+              👉 따라서 압축기 단열 효율의 극대화가 가스터빈 전체 상용성을 결정하는 가장 결정적인 열쇠입니다.
+            </p>
+          </div>
+
+          <div class="glass-panel rounded-2xl p-4 border border-slate-800 flex items-center justify-between text-xs text-slate-400">
+            <span>자세한 엔진 내부 설계 및 유로 분석:</span>
+            <button onclick="window.BraytonSchematic.openImageModal('images/cad_internal.png', '엔진 내부 3D CAD 투시도')"
+                    class="px-3 py-1.5 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 border border-cyan-500/40 transition-colors font-medium">
+              3D CAD 뷰 ➔
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: 3-Step Dance 인터랙티브 프로세스 -->
+    <section id="steps" class="space-y-6">
+      <div class="border-b border-slate-800 pb-3">
+        <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+          <span class="text-cyan-400">02.</span> 영상의 3단계 핵심 프로세스 (The 3-Step Dance)
+        </h2>
+        <p class="text-xs md:text-sm text-slate-400 mt-1">
+          Compress Air ➔ Heat Air ➔ Expand Air 단계별 메커니즘과 내부 압력·속도·온도 프로파일 분석
+        </p>
+      </div>
+
+      <!-- 스텝 선택 탭 -->
+      <div class="grid grid-cols-3 gap-3">
+        <button data-step="1" onclick="window.BraytonSchematic.activateStep(1)"
+                class="step-tab-btn active-step-tab p-3 rounded-xl border text-left transition-all">
+          <div class="text-[10px] uppercase font-bold tracking-wider opacity-75">STEP 1</div>
+          <div class="text-sm sm:text-base font-bold mt-0.5">1) Compress Air</div>
+          <div class="text-xs hidden sm:block opacity-80 mt-1">공기 단열 압축</div>
+        </button>
+
+        <button data-step="2" onclick="window.BraytonSchematic.activateStep(2)"
+                class="step-tab-btn inactive-step-tab p-3 rounded-xl border text-left transition-all">
+          <div class="text-[10px] uppercase font-bold tracking-wider opacity-75">STEP 2</div>
+          <div class="text-sm sm:text-base font-bold mt-0.5">2) Heat Air</div>
+          <div class="text-xs hidden sm:block opacity-80 mt-1">등압 연소 가열</div>
+        </button>
+
+        <button data-step="3" onclick="window.BraytonSchematic.activateStep(3)"
+                class="step-tab-btn inactive-step-tab p-3 rounded-xl border text-left transition-all">
+          <div class="text-[10px] uppercase font-bold tracking-wider opacity-75">STEP 3</div>
+          <div class="text-sm sm:text-base font-bold mt-0.5">3) Expand Air</div>
+          <div class="text-xs hidden sm:block opacity-80 mt-1">가스 단열 팽창 & 출력</div>
+        </button>
+      </div>
+
+      <!-- 스텝 동적 상세 패널 -->
+      <div id="step-detail-container" class="glass-panel rounded-2xl p-6 border border-slate-800 min-h-[300px] transition-all">
+        <!-- schematic.js에서 동적 렌더링 -->
+      </div>
+    </section>
+
+    <!-- SECTION 3: 실시간 열역학 시뮬레이터 -->
+    <section id="simulator" class="space-y-6">
+      <div class="border-b border-slate-800 pb-3 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+            <span class="text-cyan-400">03.</span> 실시간 브레이튼 사이클 시뮬레이터
+          </h2>
+          <p class="text-xs md:text-sm text-slate-400 mt-1">
+            파라미터를 조정하여 실시간 P-v 및 T-s 다이어그램과 열역학 성능 지표를 즉각 확인하세요.
+          </p>
+        </div>
+
+        <!-- 프리셋 버튼 -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-slate-400 mr-1 hidden sm:inline">프리셋:</span>
+          <button onclick="window.BraytonApp.loadPreset('jet')"
+                  class="px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors">
+            항공 터보제트
+          </button>
+          <button onclick="window.BraytonApp.loadPreset('ccgt')"
+                  class="px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition-colors">
+            대형 가스터빈 (CCGT)
+          </button>
+          <button onclick="window.BraytonApp.loadPreset('micro')"
+                  class="px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 transition-colors">
+            마이크로 터빈
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- 좌측: 입력 컨트롤러 (4 col) -->
+        <div class="lg:col-span-4 glass-panel rounded-2xl p-5 border border-slate-800 space-y-5">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <span>⚙️</span> 제어 파라미터 (Control Inputs)
+          </h3>
+
+          <!-- 압력비 rp 슬라이더 -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center text-xs">
+              <label for="input-rp" class="font-semibold text-slate-200">
+                압력비 ($r_p = P_2 / P_1$)
+              </label>
+              <span id="label-rp" class="font-mono text-cyan-400 font-bold bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/30">12.0</span>
+            </div>
+            <input type="range" id="input-rp" min="2" max="35" step="0.5" value="12" />
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>2.0 (초저압)</span>
+              <span>18.0 (중간)</span>
+              <span>35.0 (고압)</span>
+            </div>
+          </div>
+
+          <!-- 터빈 입구 최고 온도 T3 슬라이더 -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center text-xs">
+              <label for="input-t3" class="font-semibold text-slate-200">
+                터빈 입구 온도 ($T_3, T_{max}$)
+              </label>
+              <span id="label-t3" class="font-mono text-amber-400 font-bold bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/30">1,400 °C</span>
+            </div>
+            <input type="range" id="input-t3" min="800" max="1600" step="25" value="1400" />
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>800°C (1,073K)</span>
+              <span>1,200°C</span>
+              <span>1,600°C (1,873K)</span>
+            </div>
+          </div>
+
+          <!-- 압축기 입구 외기 온도 T1 슬라이더 -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center text-xs">
+              <label for="input-t1" class="font-semibold text-slate-200">
+                외기 흡입 온도 ($T_1$)
+              </label>
+              <span id="label-t1" class="font-mono text-blue-400 font-bold bg-blue-950/60 px-2 py-0.5 rounded border border-blue-500/30">15 °C (288.15 K)</span>
+            </div>
+            <input type="range" id="input-t1" min="-30" max="45" step="1" value="15" />
+            <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+              <span>-30°C (고고도/극지)</span>
+              <span>15°C (표준대기)</span>
+              <span>45°C (혹서기)</span>
+            </div>
+          </div>
+
+          <!-- 추가 상수 정보 아코디언 -->
+          <div class="pt-2 border-t border-slate-800 text-xs text-slate-400 space-y-1 font-mono">
+            <div class="flex justify-between">
+              <span>대기 압력 $P_1$:</span>
+              <span class="text-slate-300">101.3 kPa (1 atm)</span>
+            </div>
+            <div class="flex justify-between">
+              <span>공기 비열비 $\gamma$:</span>
+              <span class="text-slate-300">1.40</span>
+            </div>
+            <div class="flex justify-between">
+              <span>정압 비열 $c_p$:</span>
+              <span class="text-slate-300">1.005 kJ/kg·K</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 우측: 핵심 메트릭 카드 및 P-v / T-s 다이어그램 (8 col) -->
+        <div class="lg:col-span-8 space-y-5">
+          <!-- 실시간 성능 지표 그리드 -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <!-- 열효율 -->
+            <div class="glass-panel rounded-xl p-3.5 border border-cyan-500/30 metric-glow">
+              <div class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">이론 열효율 (η_th)</div>
+              <div id="metric-efficiency" class="text-xl md:text-2xl font-extrabold text-white mt-1">50.8 %</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">카르노 대비: <span id="metric-carnot-ratio" class="text-cyan-300 font-mono">--%</span></div>
+            </div>
+
+            <!-- 순 출력 일 -->
+            <div class="glass-panel rounded-xl p-3.5 border border-amber-500/30">
+              <div class="text-[10px] text-amber-400 font-bold uppercase tracking-wider">순 생산 일 (w_net)</div>
+              <div id="metric-wnet" class="text-xl md:text-2xl font-extrabold text-white mt-1">456.2 kJ/kg</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">최대치 대비: <span id="metric-wnet-ratio" class="text-amber-300 font-mono">--%</span></div>
+            </div>
+
+            <!-- 역일비율 BWR -->
+            <div class="glass-panel rounded-xl p-3.5 border border-slate-700">
+              <div class="text-[10px] text-blue-400 font-bold uppercase tracking-wider">역일비율 (BWR)</div>
+              <div id="metric-bwr" class="text-xl md:text-2xl font-extrabold text-white mt-1">42.5 %</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">터빈 출력의 자가소비</div>
+            </div>
+
+            <!-- 최적 압력비 -->
+            <div class="glass-panel rounded-xl p-3.5 border border-slate-700">
+              <div class="text-[10px] text-green-400 font-bold uppercase tracking-wider">최적 압력비 (r_p,opt)</div>
+              <div id="metric-rp-opt" class="text-xl md:text-2xl font-extrabold text-green-400 mt-1">14.2</div>
+              <div class="text-[10px] text-slate-400 mt-0.5">최대 출력 설계점</div>
+            </div>
+          </div>
+
+          <!-- 다이어그램 2개 (P-v, T-s) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- P-v 선도 -->
+            <div class="glass-panel rounded-xl p-4 border border-slate-800 flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+                  <span>📈</span> P-v 다이어그램
+                </span>
+                <span class="text-[10px] text-slate-400 font-mono">등엔트로피 압축 & 팽창</span>
+              </div>
+              <div class="canvas-container">
+                <canvas id="pv-canvas" class="w-full h-full"></canvas>
+              </div>
+            </div>
+
+            <!-- T-s 선도 -->
+            <div class="glass-panel rounded-xl p-4 border border-slate-800 flex flex-col justify-between">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                  <span>🔥</span> T-s 다이어그램
+                </span>
+                <span class="text-[10px] text-slate-400 font-mono">정압 가열 & 정압 방열</span>
+              </div>
+              <div class="canvas-container">
+                <canvas id="ts-canvas" class="w-full h-full"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- 상태점 수치 테이블 -->
+          <div class="glass-panel rounded-xl p-4 border border-slate-800 overflow-x-auto">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">상태점별 열역학 프로파일 (State Points 1 ~ 4)</h4>
+            <table class="w-full text-xs text-left font-mono">
+              <thead class="bg-slate-900/80 text-slate-400 border-b border-slate-800">
+                <tr>
+                  <th class="p-2">상태</th>
+                  <th class="p-2">위치</th>
+                  <th class="p-2">온도 T [K] (°C)</th>
+                  <th class="p-2">압력 P [kPa]</th>
+                  <th class="p-2">비체적 v [m³/kg]</th>
+                  <th class="p-2">Δs [kJ/kg·K]</th>
+                </tr>
+              </thead>
+              <tbody id="state-table-body" class="divide-y divide-slate-800/60 text-slate-300">
+                <!-- 동적 렌더링 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: 압력비 트레이드오프 분석 (공학적 딜레마) -->
+    <section id="tradeoff" class="space-y-6">
+      <div class="border-b border-slate-800 pb-3">
+        <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+          <span class="text-cyan-400">04.</span> 공학적 트레이드오프: 압력비(r_p) 증가의 딜레마
+        </h2>
+        <p class="text-xs md:text-sm text-slate-400 mt-1">
+          수식상 압력비가 오르면 효율은 끝없이 오르지만, 터빈 입구 허용 온도($T_{max}$) 한계로 인해 순 출력($w_{net}$)은 급감합니다.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        <!-- 차트 영역 (8 col) -->
+        <div class="lg:col-span-8 glass-panel rounded-2xl p-5 border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300">
+              압력비 변화에 따른 효율($\eta_{th}$) vs 순 출력($w_{net}$) 곡선
+            </span>
+            <span class="text-[10px] text-cyan-400 font-mono">실시간 파라미터 연동</span>
+          </div>
+          <div class="relative w-full h-80">
+            <canvas id="tradeoff-canvas" class="w-full h-full"></canvas>
+          </div>
+        </div>
+
+        <!-- 수식 및 원리 설명 카드 (4 col) -->
+        <div class="lg:col-span-4 space-y-4">
+          <div class="glass-panel rounded-2xl p-5 border border-slate-800 space-y-3">
+            <h3 class="text-sm font-bold text-amber-400 flex items-center gap-1.5">
+              <span>⚠️</span> 왜 출력이 감소하는가?
+            </h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              압력비($r_p$)가 과도하게 커지면, 압축기 출구 온도($T_2$)가 너무 높아집니다.
+              터빈 블레이드 내열 한계($T_3 \approx 1,400\sim 1,600^\circ\text{C}$)가 고정되어 있으므로, 연소실에서 가열할 수 있는 여유 온도 폭($T_3 - T_2$)이 좁아져 단위 질량당 순 생산 일($w_{net}$)이 급격히 줄어듭니다.
+            </p>
+
+            <div class="bg-slate-900 rounded-xl p-3 border border-slate-700/60 text-xs font-mono text-cyan-300 space-y-1">
+              <div class="text-[10px] text-slate-400">최대 순 출력 발생 최적 압력비 공식:</div>
+              <div class="text-center font-bold py-1">
+                $$r_{p, opt} = \left(\frac{T_{max}}{T_{min}}\right)^{\frac{\gamma}{2(\gamma - 1)}}$$
+              </div>
+            </div>
+
+            <p class="text-xs text-slate-400 leading-relaxed">
+              따라서 실제 상용 가스터빈은 이론상 최대 효율점 대신, <strong>최대 순 출력을 낼 수 있는 최적 압력비($r_{p, opt}$)</strong> 주변에서 설계됩니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: 실제 산업 및 항공 응용 분야 -->
+    <section id="application" class="space-y-6">
+      <div class="border-b border-slate-800 pb-3">
+        <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+          <span class="text-cyan-400">05.</span> 실제 산업 및 항공 응용 분야
+        </h2>
+        <p class="text-xs md:text-sm text-slate-400 mt-1">
+          초음속 항공 추진에서부터 60% 이상의 열효율을 자랑하는 복합화력발전에 이르기까지
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- 항공 추진 -->
+        <div class="glass-panel rounded-2xl p-6 border border-slate-800 hover:border-cyan-500/40 transition-all space-y-3">
+          <div class="text-2xl">✈️</div>
+          <h3 class="text-lg font-bold text-white">항공 제트 추진 (터보팬/터보제트)</h3>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            터빈 축동력으로 압축기 및 대형 팬을 돌리고, 터빈 후단의 배기 노즐을 통해 음속 이상의 고속 분사 가스로 반작용 추력(Thrust)을 형성합니다.
+            단위 중량 대비 출력(Power-to-Weight)이 현존 내연기관 중 가장 우수합니다.
+          </p>
+          <div class="pt-2">
+            <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30">
+              전투기, 상용 여객기
+            </span>
+          </div>
+        </div>
+
+        <!-- 복합화력발전 CCGT -->
+        <div class="glass-panel rounded-2xl p-6 border border-slate-800 hover:border-amber-500/40 transition-all space-y-3">
+          <div class="text-2xl">⚡</div>
+          <h3 class="text-lg font-bold text-white">복합화력발전 (CCGT)</h3>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            가스터빈(브레이튼 사이클) 1차 발전 후 배출되는 약 550°C의 고온 배기가스를 배열회수보일러(HRSG)로 보내 증기터빈(랭킨 사이클)을 2차 구동합니다.
+            이를 통해 복합 열효율 <strong>60% 이상</strong>을 달성합니다.
+          </p>
+          <div class="pt-2">
+            <span class="text-[10px] px-2 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-500/30">
+              친환경 LNG 발전소
+            </span>
+          </div>
+        </div>
+
+        <!-- 성능 향상 기술 -->
+        <div class="glass-panel rounded-2xl p-6 border border-slate-800 hover:border-blue-500/40 transition-all space-y-3">
+          <div class="text-2xl">🔧</div>
+          <h3 class="text-lg font-bold text-white">사이클 성능 개량 3대 기술</h3>
+          <ul class="text-xs text-slate-300 space-y-1.5 leading-relaxed">
+            <li><strong class="text-cyan-400">• 재생 (Regeneration):</strong> 터빈 배기열로 압축 공기를 예열하여 연료 절감</li>
+            <li><strong class="text-blue-400">• 중간냉각 (Intercooling):</strong> 다단 압축 과정에서 공기를 냉각하여 압축기 소모 일 대폭 절감</li>
+            <li><strong class="text-amber-400">• 재열 (Reheat):</strong> 다단 팽창 과정 중 재연소하여 터빈 총 출력 극대화</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: 고화질 기술 자료실 & 갤러리 -->
+    <section id="gallery" class="space-y-6">
+      <div class="border-b border-slate-800 pb-3">
+        <h2 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+          <span class="text-cyan-400">06.</span> 기술 문서 이미지 자료실 (Gallery)
+        </h2>
+        <p class="text-xs md:text-sm text-slate-400 mt-1">
+          기술 해설서 원문에 포함된 고해상도 연구실 점검 사진, CAD 투시도, 압력-온도 프로파일 원본
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <!-- 갤러리 아이템 1 -->
+        <div class="group relative rounded-xl overflow-hidden bg-slate-900 border border-slate-800 cursor-pointer shadow-lg hover:border-cyan-500/50 transition-all"
+             onclick="window.BraytonSchematic.openImageModal('images/lab_gasturbine.png', '실제 가스터빈 모델과 연구 엔지니어')">
+          <img src="images/lab_gasturbine.png" alt="실제 가스터빈 모델" class="w-full h-36 object-cover group-hover:scale-105 transition-transform" />
+          <div class="p-2 bg-slate-900/90 text-[11px] font-medium text-slate-300 truncate">실제 가스터빈 & 엔지니어</div>
+        </div>
+
+        <!-- 갤러리 아이템 2 -->
+        <div class="group relative rounded-xl overflow-hidden bg-slate-900 border border-slate-800 cursor-pointer shadow-lg hover:border-cyan-500/50 transition-all"
+             onclick="window.BraytonSchematic.openImageModal('images/cad_turbine.png', '엔진 전면 팬 및 다단 압축기 3D CAD 투시도')">
+          <img src="images/cad_turbine.png" alt="CAD 투시도" class="w-full h-36 object-cover group-hover:scale-105 transition-transform" />
+          <div class="p-2 bg-slate-900/90 text-[11px] font-medium text-slate-300 truncate">3D CAD 전면 팬 투시도</div>
+        </div>
+
+        <!-- 갤러리 아이템 3 -->
+        <div class="group relative rounded-xl overflow-hidden bg-slate-900 border border-slate-800 cursor-pointer shadow-lg hover:border-cyan-500/50 transition-all"
+             onclick="window.BraytonSchematic.openImageModal('images/engine_profile_graph.png', '터보제트 엔진 단면도 및 압력·속도·온도 프로파일')">
+          <img src="images/engine_profile_graph.png" alt="프로파일 그래프" class="w-full h-36 object-cover group-hover:scale-105 transition-transform" />
+          <div class="p-2 bg-slate-900/90 text-[11px] font-medium text-slate-300 truncate">엔진 단면 압력·속도 프로파일</div>
+        </div>
+
+        <!-- 갤러리 아이템 4 -->
+        <div class="group relative rounded-xl overflow-hidden bg-slate-900 border border-slate-800 cursor-pointer shadow-lg hover:border-cyan-500/50 transition-all"
+             onclick="window.BraytonSchematic.openImageModal('images/step2_flame.png', '연소실 내부 고온 등압 연소 화염')">
+          <img src="images/step2_flame.png" alt="연소 화염" class="w-full h-36 object-cover group-hover:scale-105 transition-transform" />
+          <div class="p-2 bg-slate-900/90 text-[11px] font-medium text-slate-300 truncate">연소실 등압 화염</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 이미지 확대 모달 (Lightbox) -->
+  <div id="image-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden items-center justify-center p-4" onclick="window.BraytonSchematic.closeImageModal()">
+    <div class="relative max-w-4xl w-full bg-slate-900 rounded-2xl border border-slate-700 p-4 shadow-2xl space-y-3" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <h3 id="modal-title" class="text-sm font-bold text-white truncate">이미지 뷰어</h3>
+        <button onclick="window.BraytonSchematic.closeImageModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          ✕
+        </button>
+      </div>
+      <div class="max-h-[75vh] flex items-center justify-center overflow-hidden rounded-xl bg-slate-950">
+        <img id="modal-image" src="" alt="세부 이미지" class="max-h-[72vh] w-auto object-contain mx-auto" />
+      </div>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <footer class="bg-slate-950 border-t border-slate-800 py-6 text-center text-xs text-slate-500 space-y-1">
+    <p>브레이튼 사이클 기술 해설서 (YouTube Shorts [bSXq6ox_XLA] Charlie Solis 기반)</p>
+    <p>Thermodynamics & Aerospace Engineering Interactive Web System • Pure Vanilla JS & HTML5</p>
+  </footer>
+
+  <!-- 스크립트 모듈 로드 -->
+  <script src="js/thermodynamics.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/schematic.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
